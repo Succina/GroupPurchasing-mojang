@@ -914,7 +914,9 @@ async function autoEnter(autoEnterSettings) {
 
             await sleep(500);
             if (!await findAndClick(requestEnterRo)) { await genshin.returnMainUi(); continue; }
-            await waitForMainUI(true, 20 * 1000);
+
+            const memberWaitMs = 3200 + Math.floor(Math.random() * 1001);
+            await waitForMainUI(true, memberWaitMs);
 
         } else { // 等待他人进入
             const playerSign = await getPlayerSign();
