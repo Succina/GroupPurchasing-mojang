@@ -397,16 +397,17 @@ async function runGroupPurchasing(runExtra) {
     } else if (groupNumBer > 1) {
         await goToTarget(groupNumBer);
         let start = new Date();
-        while (new Date() - start < 2 * 60 * 60 * 1000) {
-            if (await waitForMainUI(false, 60 * 60 * 1000)) {
+        while (new Date() - start < 90 * 60 * 1000) {
+            // 界面稳定时才判定是否已退出世界
+            if (await isMainUI() && await getPlayerSign() === 0) {
+                break;
+            }
+            if (await waitForMainUI(false, 10 * 60 * 1000)) {
                 await waitForMainUI(true);
                 await genshin.returnMainUi();
-                if (await getPlayerSign() === 0) {
-                    break;
-                }
             }
         }
-        if (new Date() - start > 2 * 60 * 60 * 1000) {
+        if (new Date() - start >= 90 * 60 * 1000) {
             log.warn("超时仍未回到主界面，主动退出");
         }
         let leaveAttempts = 0;
