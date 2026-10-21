@@ -855,6 +855,9 @@ async function autoEnter(autoEnterSettings) {
     let enterCount = 0;
     let targetsRo = [];
     let success = false;
+    // 倒计时7s；静默期间循环仍在按 Y 接人，有新的同意就重置倒计时。
+    const COUNT_SETTLE_MS = 7000;
+    let lastAcceptAt = 0;   // 最近一次同意成功的时刻
 
     // ===== 初始化 =====
     setGameMetrics(1920, 1080, 1);
@@ -965,6 +968,7 @@ async function autoEnter(autoEnterSettings) {
                             doRunExtra = true;
                             await waitForMainUI(true, 20 * 1000);
                             enterCount++;
+                            lastAcceptAt = Date.now();
                             break;
                         }
                     } else {
@@ -974,6 +978,7 @@ async function autoEnter(autoEnterSettings) {
                             if (await findAndClick(allowEnterRo)) {
                                 await waitForMainUI(true, 20 * 1000);
                                 enterCount++;
+                                lastAcceptAt = Date.now();
                                 enteredPlayers = [...new Set([...enteredPlayers, result])];
                                 log.info(`${recognition.method}允许 ${result} 加入`);
                                 notification.send(`${recognition.method}允许 ${result} 加入`);
@@ -992,13 +997,19 @@ async function autoEnter(autoEnterSettings) {
             }
 
             if (enterCount >= maxEnterCount) {
-                await sleep(20000);
-                if (await findTotalNumber() === maxEnterCount + 1) {
-                    notification.send(`已达到预定人数：${maxEnterCount + 1}`);
-                    metExpectedCount = true;
-                    break;
+                // 最后一次同意后静默 7s 数一次人数（静默期间继续接人，有新的同意就重新计时）
+                const quietMs = Date.now() - lastAcceptAt;
+                if (quietMs >= COUNT_SETTLE_MS) {
+                    const totalNumber = await findTotalNumber();
+                    if (totalNumber === maxEnterCount + 1) {
+                        notification.send(`已达到预定人数：${maxEnterCount + 1}`);
+                        metExpectedCount = true;
+                        break;
+                    } else {
+                        // 按实际人数回填计数，上限为 maxEnterCount - 1
+                        enterCount = Math.min(Math.max(0, totalNumber - 1), maxEnterCount - 1);
+                    }
                 }
-                else enterCount--;
             }
         }
     }
