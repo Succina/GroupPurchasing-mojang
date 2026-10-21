@@ -213,7 +213,12 @@ let skipLog = false;
         }
 
     }
-    await genshin.tpToStatueOfTheSeven();
+    // 传送回神像失败不应中断后续收尾
+    try {
+        await genshin.tpToStatueOfTheSeven();
+    } catch (e) {
+        log.warn(`传送回神像失败，跳过：${e.message}`);
+    }
 
     try {
         if (skipRunning && !runnedEnding) {
