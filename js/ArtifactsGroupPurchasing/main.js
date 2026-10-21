@@ -2100,14 +2100,15 @@ async function handleOnlineRecordAndReonline(isCrash, crashType = null) {
 
     // 如果是炸车，直接重新上线
     if (isCrash) {
-        log.info(`炸车后重新上线，不消耗次数`);
-
-        // autoReonline 为 0 时不进行重上线
+        // autoReonline 为 0 时不上线，但仍上报炸车信息
         const autoReonline = parseInt(settings.autoReonline) || 0;
         if (autoReonline === 0) {
-            log.info(`autoReonline 设置为 0，炸车后不重新上线`);
+            log.info(`重上线为0仅运行一次即停，炸车不再上线，仅上报炸车信息。想确保当上房主，请填大于 0 的值`);
+            await generateReonlineCommand(null, true, crashType, true);
             return;
         }
+
+        log.info(`炸车后重新上线，不消耗次数`);
 
         // 读取匹配信息.json，保留 notHost 设置
         let crashOnlineInfo = null;
@@ -2195,7 +2196,7 @@ async function handleOnlineRecordAndReonline(isCrash, crashType = null) {
         // 生成重新上线命令
         await generateReonlineCommand(reonlineInfo, false, null);
     } else {
-        log.info(`autoReonline设置为0，不执行自动重新上线`);
+        log.info(`autoReonline为0，不执行自动重新上线`);
 
         // 如果settings.afterOneDragon存在，单独启动该一条龙
         if (settings.afterOneDragon) {
@@ -2205,7 +2206,7 @@ async function handleOnlineRecordAndReonline(isCrash, crashType = null) {
 }
 
 // 生成重新上线命令（只添加到数组，不写入文件）
-async function generateReonlineCommand(onlineInfo = null, isCrash = false, crashType = null) {
+async function generateReonlineCommand(onlineInfo = null, isCrash = false, crashType = null, skipReonline = false) {
     try {
         // 如果没有提供onlineInfo，则从匹配信息.json中读取
         if (!onlineInfo) {
@@ -2224,6 +2225,12 @@ async function generateReonlineCommand(onlineInfo = null, isCrash = false, crash
         if (isCrash) {
             // 情况2：房主超时未等到所有队员到达预期坐标 - 无需报告，直接上线和启动等待一条龙
             if (crashType === "waitForPlayersArrive") {
+                // 仅上报模式：情况2 不生成炸车报告，无内容可写
+                if (skipReonline) {
+                    log.info(`仅上报模式：情况2 无炸车报告，跳过上线命令`);
+                    return;
+                }
+
                 // 添加上线指令
                 commands.push({
                     "command": "online",
@@ -2307,6 +2314,12 @@ async function generateReonlineCommand(onlineInfo = null, isCrash = false, crash
                         "rideIdentifier": onlineInfo.rideIdentifier || ""
                     }
                 });
+
+                // 仅上报模式：炸车报告已生成，跳过上线和一条龙命令
+                if (skipReonline) {
+                    log.info(`仅上报模式：已生成炸车报告，跳过上线和一条龙命令`);
+                    return;
+                }
 
                 // 添加上线指令
                 commands.push({
