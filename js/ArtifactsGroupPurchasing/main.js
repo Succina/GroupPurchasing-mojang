@@ -250,10 +250,10 @@ let skipLog = false;
             expGain = Math.max(0, expGain);
             moraGain = Math.max(0, moraGain);
 
-            log.info(`${gameAccount}：联机狗粮分解获得经验${expGain}`);
-            notification.send(`${gameAccount}：联机狗粮分解获得经验${expGain}`);
-            log.info(`${gameAccount}：联机狗粮获得摩拉${moraGain}`);
-            notification.send(`${gameAccount}：联机狗粮获得摩拉${moraGain}`);
+            log.info(`${gameAccount}可获得${expGain}经验`);
+            notification.send(`${gameAccount}可获得${expGain}经验`);
+            log.info(`${gameAccount}获得${moraGain}摩拉`);
+            notification.send(`${gameAccount}获得${moraGain}摩拉`);
 
             // 添加收益报告命令到全局数组
             commands.push({
